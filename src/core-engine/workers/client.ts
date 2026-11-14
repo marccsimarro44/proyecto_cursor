@@ -73,6 +73,7 @@ export class SanitizerClient {
   private nextId = 1;
   private disposed = false;
   private storageBackend: VaultStorageBackend = "memory";
+  private terms: string[] = [];
   private readonly pending = new Map<number, PendingCall>();
 
   private constructor(
@@ -133,6 +134,21 @@ export class SanitizerClient {
     );
   }
 
+  /**
+   * Sets the names and phrases to hide on top of the built-in detectors.
+   * Replaces the previous list and applies to later calls. The list is kept
+   * in memory only and survives {@link restart}.
+   */
+  async setTerms(terms: string[]): Promise<void> {
+    this.terms = terms;
+    await this.call("setTerms", { terms });
+  }
+
+  /** Number of distinct values the vault holds. */
+  vaultSize(): Promise<number> {
+    return this.call("vaultSize", undefined);
+  }
+
   /** Every token of the session with its original value. */
   listEntries(): Promise<VaultEntry[]> {
     return this.call("listEntries", undefined);
@@ -165,6 +181,9 @@ export class SanitizerClient {
   private async initialize(): Promise<InitResult> {
     const result = await this.call("init", this.session);
     this.storageBackend = result.backend;
+    // A restarted worker starts without the user's terms.
+    if (this.terms.length > 0)
+      await this.call("setTerms", { terms: this.terms });
     return result;
   }
 

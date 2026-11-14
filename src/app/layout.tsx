@@ -21,11 +21,28 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "PromptShield",
+    default:
+      "PromptShield: anonimiza DNI, IBAN y datos personales antes de usar ChatGPT",
     template: "%s | PromptShield",
   },
   description:
-    "Anonimiza DNI, NIE, CIF, IBAN y teléfonos en textos y hojas de cálculo antes de enviarlos a ChatGPT o Claude. Todo se procesa en tu navegador.",
+    "Sustituye DNI, NIE, CIF, IBAN, teléfonos y emails por marcadores antes de enviar textos, CSV o Excel a ChatGPT o Claude, y restáuralos después. Todo en tu navegador, sin servidores.",
+  keywords: [
+    "anonimizar datos",
+    "anonimizar DNI",
+    "ChatGPT RGPD",
+    "proteger datos personales IA",
+    "seudonimización",
+    "anonimizar Excel",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    siteName: "PromptShield",
+    title: "Usa ChatGPT con tus datos reales sin entregárselos",
+    description:
+      "Anonimiza DNI, IBAN, teléfonos y emails en textos y Excel antes de enviarlos a la IA. 100 % en tu navegador.",
+  },
 };
 
 export const viewport: Viewport = {

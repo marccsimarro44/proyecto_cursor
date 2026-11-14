@@ -1,4 +1,5 @@
 import { detectPii } from "./detectors/detect";
+import { normalizeTerms } from "./detectors/terms";
 import {
   PII_ENTITY_TYPES,
   type RestoreResult,
@@ -25,11 +26,26 @@ const TOKEN_PATTERN = new RegExp(
  * so a large job can batch many texts per write.
  */
 export class Sanitizer {
+  private terms: readonly string[] = [];
+
   constructor(private readonly vault: Vault) {}
+
+  /**
+   * Sets the names and phrases to hide in addition to the built-in
+   * detectors. Replaces the previous list; applies to later calls only.
+   */
+  setTerms(terms: readonly string[]): void {
+    this.terms = normalizeTerms(terms);
+  }
+
+  /** Every distinct character used by the current terms. */
+  get termCharacters(): string {
+    return [...new Set(this.terms.join(""))].join("");
+  }
 
   /** Replaces every piece of personal data in `text` with its token. */
   sanitize(text: string): SanitizeResult {
-    const detections = detectPii(text);
+    const detections = detectPii(text, { terms: this.terms });
     const entries = new Map<VaultToken, VaultEntry>();
 
     let sanitizedText = "";

@@ -1,3 +1,4 @@
+import { findCreditCards } from "@/lib/regex-utils/card";
 import type { PatternMatch } from "@/lib/regex-utils/match";
 import {
   findCifs,
@@ -8,6 +9,7 @@ import {
   findSpanishMobiles,
 } from "@/lib/regex-utils/es";
 import type { Detection, PiiEntityType } from "../types";
+import { findTerms } from "./terms";
 
 interface Detector {
   type: PiiEntityType;
@@ -17,7 +19,8 @@ interface Detector {
 /**
  * Active detectors. The order breaks ties when two detections of the same
  * length overlap: checksum-validated entities come before phone numbers,
- * which have no checksum.
+ * which have no checksum. User terms rank last: a term that equals a
+ * validated value is still reported as that value.
  */
 const DETECTORS: readonly Detector[] = [
   { type: "IBAN", find: findSpanishIbans },
@@ -25,8 +28,14 @@ const DETECTORS: readonly Detector[] = [
   { type: "DNI", find: findDnis },
   { type: "NIE", find: findNies },
   { type: "CIF", find: findCifs },
+  { type: "CREDIT_CARD", find: findCreditCards },
   { type: "PHONE", find: findSpanishMobiles },
 ];
+
+export interface DetectOptions {
+  /** Extra names or phrases to detect, matched as whole words. */
+  terms?: readonly string[];
+}
 
 interface Candidate extends Detection {
   rank: number;
@@ -48,14 +57,24 @@ function outranks(candidate: Candidate, other: Candidate): boolean {
  * detectors claim overlapping spans the longer one wins, so an email such as
  * `12345678z@gmail.com` is reported once as an EMAIL instead of leaving half
  * of the address in the sanitized text.
+ *
+ * `options.terms` are names or phrases the user wants hidden as well; they
+ * should already be cleaned with `normalizeTerms`.
  */
-export function detectPii(text: string): Detection[] {
+export function detectPii(
+  text: string,
+  options: DetectOptions = {},
+): Detection[] {
   const candidates: Candidate[] = [];
   DETECTORS.forEach((detector, rank) => {
     for (const match of detector.find(text)) {
       candidates.push({ type: detector.type, ...match, rank });
     }
   });
+  const rank = DETECTORS.length;
+  for (const match of findTerms(text, options.terms ?? [])) {
+    candidates.push({ type: "TERM", ...match, rank });
+  }
 
   candidates.sort(
     (a, b) => a.start - b.start || b.end - a.end || a.rank - b.rank,

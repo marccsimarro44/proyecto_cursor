@@ -15,6 +15,8 @@ export const PII_ENTITY_TYPES = [
   "PHONE",
   "EMAIL",
   "CREDIT_CARD",
+  /** A name or phrase the user asked to hide; it has no format to validate. */
+  "TERM",
 ] as const;
 
 export type PiiEntityType = (typeof PII_ENTITY_TYPES)[number];

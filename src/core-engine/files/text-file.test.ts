@@ -223,7 +223,35 @@ describe("transformTextChunks", () => {
   });
 });
 
+describe("transformTextChunks with terms", () => {
+  it("never cuts a term in two, even at a comma inside it", async () => {
+    const terms = ["Smith, John"];
+    const text = "Contacto: Smith, John y otros. ".repeat(60);
+    const maskTerms = (chunk: string) =>
+      chunk.replaceAll("Smith, John", "<TERM>");
+
+    for (const pieceSize of [1, 2, 3, 5, 7]) {
+      const output = await transformTextChunks(
+        inPieces(utf8(text), pieceSize),
+        maskTerms,
+        {
+          mode: "sanitize",
+          chunkSize: 1,
+          valueChars: [...new Set(terms.join(""))].join(""),
+        },
+      );
+
+      expect(await output.text()).toBe(maskTerms(text));
+    }
+  });
+});
+
 describe("findSplitIndex", () => {
+  it("does not cut after a character that the caller says belongs to a value", () => {
+    expect(findSplitIndex("Smith,", "sanitize")).toBe(6);
+    expect(findSplitIndex("Smith,", "sanitize", ",")).toBe(0);
+  });
+
   it("cuts after the last line break when there is one", () => {
     expect(findSplitIndex("uno\ndos\ntres", "sanitize")).toBe(8);
     expect(findSplitIndex("uno\ndos\ntres", "restore")).toBe(8);

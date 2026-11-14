@@ -89,8 +89,17 @@ export function createRequestHandler(dependencies: HandlerDependencies = {}) {
       });
     },
 
+    async setTerms({ terms }) {
+      ready().sanitizer.setTerms(terms);
+      return undefined;
+    },
+
     async listEntries() {
       return ready().vault.entries();
+    },
+
+    async vaultSize() {
+      return ready().vault.size;
     },
 
     async clear() {

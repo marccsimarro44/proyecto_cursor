@@ -65,6 +65,52 @@ describe("Sanitizer.sanitize", () => {
   });
 });
 
+describe("Sanitizer terms", () => {
+  it("hides the names the user lists and restores them", () => {
+    sanitizer.setTerms(["Ana García", "ACME S.L."]);
+    const text =
+      "Ana García (ACME S.L.) escribió a ana@example.com; ana garcía firmó.";
+
+    const result = sanitizer.sanitize(text);
+
+    expect(result.sanitizedText).toBe(
+      "[TERM_1] ([TERM_2]) escribió a [EMAIL_1]; [TERM_3] firmó.",
+    );
+    expect(sanitizer.restore(result.sanitizedText).restoredText).toBe(text);
+  });
+
+  it("gives each spelling its own token so the text restores exactly", () => {
+    sanitizer.setTerms(["Ana"]);
+
+    const { sanitizedText } = sanitizer.sanitize("Ana y ANA");
+
+    expect(sanitizedText).toBe("[TERM_1] y [TERM_2]");
+  });
+
+  it("stops hiding a term once it is removed from the list", () => {
+    sanitizer.setTerms(["Ana"]);
+    sanitizer.setTerms([]);
+
+    expect(sanitizer.sanitize("Ana").sanitizedText).toBe("Ana");
+  });
+
+  it("exposes the characters its terms use", () => {
+    sanitizer.setTerms(["Smith, John"]);
+
+    expect(sanitizer.termCharacters).toContain(",");
+    expect(sanitizer.termCharacters).toContain("S");
+  });
+
+  it("hides payment cards", () => {
+    expect(
+      sanitizer.sanitize("Tarjeta 4111 1111 1111 1111.").sanitizedText,
+    ).toBe("Tarjeta [CREDIT_CARD_1].");
+    expect(sanitizer.restore("[CREDIT_CARD_1]").restoredText).toBe(
+      "4111 1111 1111 1111",
+    );
+  });
+});
+
 describe("Sanitizer.restore", () => {
   it.each([
     "Ana (DNI 12345678Z, ana@example.com) llamó desde el +34 612 345 678.",

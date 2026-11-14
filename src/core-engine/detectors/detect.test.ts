@@ -61,6 +61,28 @@ describe("detectPii", () => {
     ).toEqual(["EMAIL"]);
   });
 
+  it("reports user terms with their own type", () => {
+    expect(
+      detectPii("Hola Ana García", { terms: ["Ana García"] }).map(
+        (detection) => [detection.type, detection.value],
+      ),
+    ).toEqual([["TERM", "Ana García"]]);
+  });
+
+  it("lets a validated value win over a term that overlaps it", () => {
+    expect(
+      detectPii("ana@example.com", { terms: ["ana"] }).map(
+        (detection) => detection.type,
+      ),
+    ).toEqual(["EMAIL"]);
+  });
+
+  it("detects a payment card and keeps its separators in the value", () => {
+    expect(detectPii("pago 4111-1111-1111-1111 ok")).toEqual([
+      { type: "CREDIT_CARD", value: "4111-1111-1111-1111", start: 5, end: 24 },
+    ]);
+  });
+
   it("returns nothing for text without personal data", () => {
     expect(detectPii("Reunión el 12/03/2025 a las 10:30, sala 4.")).toEqual([]);
     expect(detectPii("")).toEqual([]);

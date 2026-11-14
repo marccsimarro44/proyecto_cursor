@@ -9,6 +9,12 @@ export interface TextTransformOptions {
   afterChunk?: () => Promise<void>;
   /** Characters to buffer before transforming a chunk. Default 1 M. */
   chunkSize?: number;
+  /**
+   * Characters beyond the built-in ones that can be part of a value to
+   * sanitize (those of user terms, e.g. the comma in "Smith, John"). A chunk
+   * is never cut right after one of them.
+   */
+  valueChars?: string;
 }
 
 const DEFAULT_CHUNK_SIZE = 1 << 20;
@@ -57,7 +63,11 @@ function isHighSurrogate(code: number): boolean {
  * character no value can contain, and restoring cuts before a token that
  * has been opened but not closed.
  */
-export function findSplitIndex(buffer: string, mode: FileMode): number {
+export function findSplitIndex(
+  buffer: string,
+  mode: FileMode,
+  valueChars = "",
+): number {
   const lineBreak = buffer.lastIndexOf("\n");
   if (lineBreak !== -1) return lineBreak + 1;
 
@@ -78,7 +88,7 @@ export function findSplitIndex(buffer: string, mode: FileMode): number {
 
   for (let index = buffer.length - 1; index >= 0; index--) {
     const code = buffer.charCodeAt(index);
-    if (!isValueCode(code)) {
+    if (!isValueCode(code) && !valueChars.includes(buffer.charAt(index))) {
       // Never separate the two halves of an emoji or other astral character.
       return isHighSurrogate(code) ? index : index + 1;
     }
@@ -132,7 +142,7 @@ async function transformAs(
     buffer += decode(bytes);
 
     if (buffer.length >= chunkSize) {
-      let split = findSplitIndex(buffer, options.mode);
+      let split = findSplitIndex(buffer, options.mode, options.valueChars);
       if (split === 0 && buffer.length >= forceSplitSize) {
         split = buffer.length;
         if (isHighSurrogate(buffer.charCodeAt(split - 1))) split--;

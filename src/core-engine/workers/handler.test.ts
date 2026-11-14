@@ -240,6 +240,24 @@ describe("request handler", () => {
     });
   });
 
+  it("hides user terms after setTerms and reports the vault size", async () => {
+    const { handler } = await initialized();
+    await call(handler, {
+      method: "setTerms",
+      params: { terms: ["Ana García"] },
+    });
+
+    const sanitized = await call(handler, {
+      method: "sanitizeText",
+      params: { text: "Ana García, DNI 12345678Z" },
+    });
+
+    expect(sanitized).toMatchObject({ sanitizedText: "[TERM_1], DNI [DNI_1]" });
+    expect(
+      await call(handler, { method: "vaultSize", params: undefined }),
+    ).toBe(2);
+  });
+
   it("lists the entries and clears them", async () => {
     const { handler } = await initialized();
     await call(handler, {

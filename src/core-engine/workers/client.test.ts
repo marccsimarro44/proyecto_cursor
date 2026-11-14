@@ -165,6 +165,21 @@ describe("SanitizerClient", () => {
     );
   });
 
+  it("keeps the user terms across a restart", async () => {
+    const { client } = await createClient();
+    await client.setTerms(["Ana García"]);
+    expect((await client.sanitizeText("Ana García")).sanitizedText).toBe(
+      "[TERM_1]",
+    );
+
+    await client.restart();
+
+    expect((await client.sanitizeText("Ana García")).sanitizedText).toBe(
+      "[TERM_1]",
+    );
+    expect(await client.vaultSize()).toBe(1);
+  });
+
   it("loses the vault on restart when only memory storage is available", async () => {
     const { client } = await createClient({
       openStorage: async () => ({

@@ -30,7 +30,11 @@ export interface SanitizerApi {
     params: { file: Blob; fileName: string; mode: FileMode };
     result: FileResult;
   };
+  /** Replaces the user's list of names and phrases to hide. */
+  setTerms: { params: { terms: string[] }; result: undefined };
   listEntries: { params: undefined; result: VaultEntry[] };
+  /** Number of distinct values in the vault, without copying them. */
+  vaultSize: { params: undefined; result: number };
   /** Forgets every entry and deletes the session's stored records. */
   clear: { params: undefined; result: undefined };
 }
