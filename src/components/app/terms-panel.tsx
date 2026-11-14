@@ -26,7 +26,10 @@ export function TermsPanel({ value, onChange }: TermsPanelProps) {
         <UserRoundIcon className="text-pii size-4" aria-hidden="true" />
         Nombres y empresas a ocultar
         {count > 0 && (
-          <span className="text-muted-foreground font-normal">
+          <span
+            className="tok animate-in fade-in zoom-in-90 rounded-full px-2 py-0.5 text-xs font-normal tabular-nums"
+            style={{ "--hue": 78 } as React.CSSProperties}
+          >
             ({count} {count === 1 ? "término" : "términos"})
           </span>
         )}
@@ -36,7 +39,7 @@ export function TermsPanel({ value, onChange }: TermsPanelProps) {
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={"Ana García Ruiz\nConstrucciones Levante S.L."}
-        className="min-h-20 font-mono"
+        className="min-h-20 rounded-xl border-white/8 bg-black/25 py-2.5 font-mono leading-7 dark:bg-black/25"
         spellCheck={false}
         autoComplete="off"
       />
