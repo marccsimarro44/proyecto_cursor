@@ -56,3 +56,36 @@ export interface SanitizeResult {
   /** Vault entries needed to restore `sanitizedText` to the source text. */
   entries: VaultEntry[];
 }
+
+/** Outcome of restoring the original values in one text. */
+export interface RestoreResult {
+  /** Text with every token known to the vault replaced by its original value. */
+  restoredText: string;
+  /** Number of token occurrences that were replaced. */
+  restoredCount: number;
+  /**
+   * Token-shaped strings the vault has no entry for, left untouched in
+   * `restoredText`. Unique, in order of first appearance.
+   */
+  unresolvedTokens: string[];
+}
+
+/** Number of detections per entity type. Types never detected are absent. */
+export type DetectionCounts = Partial<Record<PiiEntityType, number>>;
+
+/** Direction of a file job. */
+export type FileMode = "sanitize" | "restore";
+
+/** Outcome of sanitizing or restoring one file. */
+export interface FileResult {
+  /** The processed file, ready to download. */
+  blob: Blob;
+  /** Suggested download name, e.g. `clientes.sanitized.csv`. */
+  fileName: string;
+  /** Values tokenized per entity type. Empty when restoring. */
+  detections: DetectionCounts;
+  /** Token occurrences replaced by their original value. 0 when sanitizing. */
+  restoredCount: number;
+  /** Tokens found while restoring that the vault has no entry for. */
+  unresolvedTokens: string[];
+}
