@@ -50,6 +50,13 @@ const LEGAL_FORM_GAP = /^,?[ \u00A0]{0,3}$/;
 /** Between two fields of a CSV or spreadsheet row. */
 const FIELD_SEPARATOR = /^[,;\t|]$/;
 const FIELD_END = /^(?:$|[,;\t|\r\n])/;
+/** "Apellidos: Fernández Gil". */
+const LABEL_GAP = /^[ \u00A0]*:[ \u00A0]*$/;
+/** "GARCÍA LÓPEZ, MARÍA". */
+const COMMA_GAP = /^,[ \u00A0]?$/;
+const INVERTED_NAME_END = /^(?:$|[;\t|).\r\n])/;
+/** What may come just before a field: start of text, line, cell or label. */
+const FIELD_START = /(?:^|[\r\n\t;:(|])[ \u00A0]*$/;
 /** The four characters before a word that opens a sentence or a line. */
 const SENTENCE_START = /(?:^|[.:;!?¿¡"«(\r\n])[ \u00A0]*$/;
 
@@ -74,6 +81,32 @@ const PARTICLES = new Set([
 ]);
 
 const CONJUNCTIONS = new Set(["y", "i", "e"]);
+
+const SAINTS = new Set(["san", "santa", "santo", "sant"]);
+
+/** Form fields whose value is a person's name: "Titular: …". */
+const LABELS = new Set([
+  "nombre",
+  "apellidos",
+  "apellido",
+  "titular",
+  "paciente",
+  "cliente",
+  "empleado",
+  "empleada",
+  "trabajador",
+  "trabajadora",
+  "alumno",
+  "alumna",
+  "firmante",
+  "remitente",
+  "destinatario",
+  "destinataria",
+  "interesado",
+  "interesada",
+  "solicitante",
+  "contacto",
+]);
 
 const TITLES = new Set([
   "sr",
@@ -258,8 +291,31 @@ function isUpperCase(word: Word): boolean {
  */
 function isNamePart(word: Word, upper: boolean): boolean {
   if (NOT_NAMES.has(word.folded)) return false;
+  // "Estimada Sra. Lozano": the title introduces the name. A single letter
+  // stays a possible initial ("Juan D. Soler").
+  if (word.text.length > 1 && TITLES.has(word.folded)) return false;
   if (upper) return isUpperCase(word);
   return isTitleCase(word) || (isUpperCase(word) && word.text.length >= 4);
+}
+
+/**
+ * After "y" or "i", whether the word at `index` opens a second name ("Ana
+ * Martín y Luis Pérez") rather than closing this one ("Puig i Soler"): a
+ * first name, or a word followed by more capitalized words.
+ */
+function startsAnotherName(
+  text: string,
+  words: readonly Word[],
+  index: number,
+  upper: boolean,
+): boolean {
+  const next = words[index + 1];
+  return (
+    FIRST_NAMES.has(words[index].folded) ||
+    (next !== undefined &&
+      INLINE_GAP.test(gap(text, words[index], next)) &&
+      isNamePart(next, upper))
+  );
 }
 
 /** Index of the last word of the name that starts at `first`. */
@@ -306,7 +362,13 @@ function extendName(
       ) {
         break;
       }
-      if (isNamePart(after, upper)) {
+      if (
+        isNamePart(after, upper) &&
+        !(
+          CONJUNCTIONS.has(words[index].folded) &&
+          startsAnotherName(text, words, index + 1, upper)
+        )
+      ) {
         last = index + 1;
         count++;
         break;
@@ -342,6 +404,67 @@ function surnameField(
   return FIELD_END.test(after) ? end : undefined;
 }
 
+/**
+ * "GARCÍA LÓPEZ, MARÍA": the index of the last word of the first name after
+ * the surnames at `last`, when the field ends there.
+ */
+function firstNameAfterComma(
+  text: string,
+  words: readonly Word[],
+  last: number,
+  upper: boolean,
+): number | undefined {
+  const next = words[last + 1];
+  if (
+    next === undefined ||
+    !COMMA_GAP.test(gap(text, words[last], next)) ||
+    !FIRST_NAMES.has(next.folded) ||
+    !isNamePart(next, upper)
+  ) {
+    return undefined;
+  }
+  const end = extendName(text, words, last + 1, upper);
+  const after = text.slice(words[end].end, words[end].end + 2);
+  return INVERTED_NAME_END.test(after) ? end : undefined;
+}
+
+/**
+ * "GARCÍA LÓPEZ, MARÍA" seen from the first name at `index`: the index of
+ * the first surname, when the surnames open a field or a line.
+ */
+function surnamesBeforeComma(
+  text: string,
+  words: readonly Word[],
+  index: number,
+  upper: boolean,
+): number | undefined {
+  const previous = words[index - 1];
+  if (
+    previous === undefined ||
+    !COMMA_GAP.test(gap(text, previous, words[index])) ||
+    !isNamePart(previous, upper)
+  ) {
+    return undefined;
+  }
+  let first = index - 1;
+  for (let count = 1; count < MAX_NAME_WORDS - 1; count++) {
+    const before = words[first - 1];
+    if (
+      before === undefined ||
+      !INLINE_GAP.test(gap(text, before, words[first])) ||
+      !(isNamePart(before, upper) || PARTICLES.has(before.folded))
+    ) {
+      break;
+    }
+    first--;
+  }
+  while (PARTICLES.has(words[first].folded)) first++;
+  const start = words[first].start;
+  return FIELD_START.test(text.slice(Math.max(0, start - 4), start))
+    ? first
+    : undefined;
+}
+
 function span(text: string, from: Word, to: Word): PatternMatch {
   return {
     value: text.slice(from.start, to.end),
@@ -359,6 +482,22 @@ export function findPersonNames(text: string): PatternMatch[] {
   while (index < words.length) {
     const word = words[index];
     const next = words[index + 1];
+
+    // "Apellidos: Fernández Gil", "Paciente: GARCÍA LÓPEZ, MARÍA".
+    if (
+      LABELS.has(word.folded) &&
+      next !== undefined &&
+      LABEL_GAP.test(gap(text, word, next))
+    ) {
+      const upper = isUpperCase(next);
+      if (isNamePart(next, upper) && !PARTICLES.has(next.folded)) {
+        let last = extendName(text, words, index + 1, upper);
+        last = firstNameAfterComma(text, words, last, upper) ?? last;
+        found.push(span(text, next, words[last]));
+        index = last + 1;
+        continue;
+      }
+    }
 
     // "Sra. Lozano", "Hola Ainhoa": the cue is not part of the name.
     const isTitle = TITLES.has(word.folded) && isTitleCase(word);
@@ -384,13 +523,34 @@ export function findPersonNames(text: string): PatternMatch[] {
       }
     }
 
+    // "San Sebastián", "Santa Teresa": a place or a saint.
+    const previous = words[index - 1];
+    const afterSaint =
+      previous !== undefined &&
+      SAINTS.has(previous.folded) &&
+      INLINE_GAP.test(gap(text, previous, word));
+
     if (
       FIRST_NAMES.has(word.folded) &&
       !NOT_NAMES.has(word.folded) &&
+      !afterSaint &&
       (isTitleCase(word) || isUpperCase(word))
     ) {
       const upper = isUpperCase(word);
       const last = extendName(text, words, index, upper);
+
+      const surnamesFirst = surnamesBeforeComma(text, words, index, upper);
+      const previousEnd = found.at(-1)?.end ?? -1;
+      if (
+        surnamesFirst !== undefined &&
+        words[surnamesFirst].start >= previousEnd &&
+        INVERTED_NAME_END.test(text.slice(words[last].end, words[last].end + 2))
+      ) {
+        found.push(span(text, words[surnamesFirst], words[last]));
+        index = last + 1;
+        continue;
+      }
+
       const surnames = surnameField(text, words, last, upper);
       const alone = last === index;
       if (
@@ -438,6 +598,14 @@ function extendCompanyBackward(
       first = index;
       count++;
     } else if (!PARTICLES.has(word.folded)) {
+      break;
+    } else if (
+      // "Ana Martín y Bricolaje Express, S.A.": two parties, not one name.
+      CONJUNCTIONS.has(word.folded) &&
+      [words[index - 1], words[index - 2]].some(
+        (before) => before !== undefined && FIRST_NAMES.has(before.folded),
+      )
+    ) {
       break;
     }
   }

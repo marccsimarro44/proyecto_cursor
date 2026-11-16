@@ -102,6 +102,17 @@ describe("detectPii", () => {
     ).toEqual([["ORG", "Talleres José Pérez SL"]]);
   });
 
+  it("keeps a person and a company apart across «y»", () => {
+    expect(
+      detectPii("Contrato entre Ana Martín y Bricolaje Express, S.A.", {
+        names: true,
+      }).map((d) => [d.type, d.value]),
+    ).toEqual([
+      ["PERSON", "Ana Martín"],
+      ["ORG", "Bricolaje Express, S.A."],
+    ]);
+  });
+
   it("prefers the user's term over a guessed name of the same span", () => {
     expect(
       detectPii("Hola Ana García", { names: true, terms: ["Ana García"] }).map(

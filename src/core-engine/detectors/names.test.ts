@@ -10,6 +10,7 @@ describe("findPersonNames", () => {
     ["Firmado por María José de la Fuente.", ["María José de la Fuente"]],
     ["El cliente es Iñaki Etxeberria.", ["Iñaki Etxeberria"]],
     ["Llama a Jordi Puig i Soler mañana.", ["Jordi Puig i Soler"]],
+    ["Firman Ana Martín y Luis Pérez.", ["Ana Martín", "Luis Pérez"]],
     ["Hablé con Juan M. Soler ayer.", ["Juan M. Soler"]],
     ["Revisado por Carmen.", ["Carmen"]],
     ["TITULAR: JOSÉ ANTONIO PÉREZ LÓPEZ", ["JOSÉ ANTONIO PÉREZ LÓPEZ"]],
@@ -24,6 +25,11 @@ describe("findPersonNames", () => {
 
   it.each([
     ["Atiende la Sra. Lozano.", ["Lozano"]],
+    ["Estimada Sra. Lozano:\nLe escribo", ["Lozano"]],
+    ["Hola Dr. Iñaki Ruiz,", ["Iñaki Ruiz"]],
+    ["Nombre: Lucía\nApellidos: Fernández Gil", ["Lucía", "Fernández Gil"]],
+    ["Paciente: GARCÍA LÓPEZ, MARÍA", ["GARCÍA LÓPEZ, MARÍA"]],
+    ["7;Ruiz Gil, Marta;Madrid", ["Ruiz Gil, Marta"]],
     ["Dña. Rosa Martínez firmó.", ["Rosa Martínez"]],
     ["Lo envía el Dr. Fernández Ortega.", ["Fernández Ortega"]],
     ["Hola Ainhize, te escribo por la factura.", ["Ainhize"]],
@@ -43,6 +49,8 @@ describe("findPersonNames", () => {
     "Vitamina D. Después del análisis.",
     "Mercedes y Santiago son ciudades y marcas.",
     "NOMBRE,APELLIDOS,DNI",
+    "Visitamos San Sebastián y Santa Teresa.",
+    "Vivo en Madrid, Pilar no.",
     "Pilar,Mañana vamos al centro",
     "El IBAN y el DNI están en el anexo.",
   ])("finds no person in %j", (text) => {
@@ -68,6 +76,10 @@ describe("findCompanyNames", () => {
     ["Pagado a Gestoría Ruiz y Asociados.", ["Gestoría Ruiz y Asociados"]],
     ["Donación a la Fundación Mar de Plata.", ["Fundación Mar de Plata"]],
     ["Socio de Northwind Traders Ltd.", ["Northwind Traders Ltd."]],
+    [
+      "Contrato entre Ana Martín y Bricolaje Express, S.A.",
+      ["Bricolaje Express, S.A."],
+    ],
   ])("finds the company in %j", (text, expected) => {
     expect(companies(text)).toEqual(expected);
   });
