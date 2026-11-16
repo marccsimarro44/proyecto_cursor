@@ -178,6 +178,37 @@
   box-shadow: 0 0 8px oklch(0.84 0.14 var(--hue, 155) / 60%);
 }
 
+/*
+ * Detected data painted behind the user's own text (HighlightedTextarea).
+ * Only background and shadow: padding or borders would move the glyphs and
+ * pull the highlight away from the text it belongs to.
+ */
+.tok-src {
+  color: transparent;
+  border-radius: 3px;
+  background: oklch(0.84 0.14 var(--hue, 155) / 20%);
+  box-shadow: inset 0 -2px 0 oklch(0.84 0.14 var(--hue, 155) / 85%);
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+/*
+ * The current one is told apart by shape (a ring and a full-strength
+ * underline), not by a heavier fill: at 22 % the text over it still keeps
+ * 4.5:1 contrast in every hue, and at 40 % it dropped to 3:1.
+ */
+.tok-src[data-active="true"] {
+  background: oklch(0.84 0.14 var(--hue, 155) / 22%);
+  box-shadow:
+    inset 0 -2px 0 oklch(0.84 0.14 var(--hue, 155)),
+    0 0 0 2px oklch(0.84 0.14 var(--hue, 155) / 75%);
+}
+
+/* Space reserved for the scrollbar, so two stacked boxes wrap text alike. */
+.mirror-scroll {
+  scrollbar-gutter: stable;
+}
+
 /* Raw personal data, as the demo shows it before protecting it. */
 .pii-raw {
   color: oklch(0.86 0.13 78);
@@ -395,6 +426,54 @@
   box-shadow:
     inset 0 -1px 0 oklch(0 0 0 / 40%),
     inset 0 0 0 1px oklch(1 0 0 / 10%);
+}
+
+/* A focus ring that is visible on every surface, for links, summaries and
+   scrollable regions. Buttons and fields draw their own. */
+a:focus-visible,
+summary:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 2px solid oklch(0.86 0.19 155);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+[role="region"][tabindex="0"]:focus-visible {
+  outline-offset: 0;
+}
+
+/* The skip link is the first stop of the keyboard: hidden until focused. */
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 50;
+  transform: translateY(-200%);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  transition: transform 0.2s ease;
+}
+.skip-link:focus-visible {
+  transform: none;
+  outline-offset: 2px;
+}
+
+/* In forced-colors modes backgrounds are dropped; outlines are kept. */
+@media (forced-colors: active) {
+  .tok,
+  .tok-src,
+  .pii-raw {
+    outline: 1px solid CanvasText;
+  }
+  /* Its text must stay transparent: the real text is the textarea's, and a
+     forced color here would print every detected value twice. */
+  .tok-src {
+    forced-color-adjust: none;
+    outline: 1px solid Highlight;
+  }
 }
 
 /* Slim scrollbars that match the surfaces. */

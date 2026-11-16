@@ -2,6 +2,15 @@ import type { Metadata, Viewport } from "next";
 import { Geist, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  SHARE_DESCRIPTION,
+  SHARE_IMAGE,
+  SHARE_TITLE,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+  SITE_URL,
+} from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,13 +29,23 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  // Makes every relative URL below (share image, canonical) absolute, which
+  // is what social networks require.
+  metadataBase: new URL(SITE_URL),
   title: {
-    default:
-      "PromptShield: anonimiza DNI, IBAN y datos personales antes de usar ChatGPT",
-    template: "%s | PromptShield",
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Sustituye DNI, NIE, CIF, IBAN, teléfonos y emails por marcadores antes de enviar textos, CSV o Excel a ChatGPT o Claude, y restáuralos después. Todo en tu navegador, sin servidores.",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
+  // Stops iOS from turning the sample DNI and IBAN numbers into phone links.
+  formatDetection: { telephone: false, email: false, address: false },
   keywords: [
     "anonimizar datos",
     "anonimizar DNI",
@@ -37,11 +56,18 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     type: "website",
+    url: "/",
     locale: "es_ES",
-    siteName: "PromptShield",
-    title: "Usa ChatGPT con tus datos reales sin entregárselos",
-    description:
-      "Anonimiza DNI, IBAN, teléfonos y emails en textos y Excel antes de enviarlos a la IA. 100 % en tu navegador.",
+    siteName: SITE_NAME,
+    title: SHARE_TITLE,
+    description: SHARE_DESCRIPTION,
+    images: [SHARE_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SHARE_TITLE,
+    description: SHARE_DESCRIPTION,
+    images: [{ url: SHARE_IMAGE.url, alt: SHARE_IMAGE.alt }],
   },
 };
 

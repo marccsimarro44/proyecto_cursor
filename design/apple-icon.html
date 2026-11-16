@@ -1,0 +1,77 @@
+<!doctype html>
+<!-- Source of src/app/apple-icon.png (180x180). iOS rounds the corners itself, so the square is full-bleed. -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        margin: 0;
+      }
+      html,
+      body {
+        width: 180px;
+        height: 180px;
+        overflow: hidden;
+        background: oklch(0.155 0.012 250);
+      }
+      .tile {
+        position: relative;
+        width: 180px;
+        height: 180px;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(
+            70% 70% at 50% 0%,
+            oklch(0.86 0.19 155 / 28%),
+            transparent 70%
+          ),
+          oklch(0.155 0.012 250);
+      }
+      svg {
+        width: 112px;
+        height: 112px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="tile">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient
+            id="g"
+            x1="6"
+            y1="4"
+            x2="26"
+            y2="28"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stop-color="oklch(0.92 0.17 160)" />
+            <stop offset="1" stop-color="oklch(0.78 0.14 215)" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M16 3.5 5.5 7.4v8.2c0 6.2 4.2 11.3 10.5 13.3 6.3-2 10.5-7.1 10.5-13.3V7.4L16 3.5Z"
+          stroke="url(#g)"
+          stroke-width="2"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M12 11.5h-1.8v9H12M20 11.5h1.8v9H20"
+          stroke="url(#g)"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <rect
+          x="13.1"
+          y="14.6"
+          width="5.8"
+          height="2.8"
+          rx="1.4"
+          fill="url(#g)"
+        />
+      </svg>
+    </div>
+  </body>
+</html>

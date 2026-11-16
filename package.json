@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "brand:render": "node scripts/render-brand-assets.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

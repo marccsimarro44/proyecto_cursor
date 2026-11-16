@@ -39,7 +39,7 @@ export function TermsPanel({ value, onChange }: TermsPanelProps) {
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={"Ana García Ruiz\nConstrucciones Levante S.L."}
-        className="min-h-20 rounded-xl border-white/8 bg-black/25 py-2.5 font-mono leading-7 dark:bg-black/25"
+        className="min-h-20 rounded-xl border-white/14 bg-black/25 py-2.5 font-mono leading-7 dark:bg-black/25"
         spellCheck={false}
         autoComplete="off"
       />

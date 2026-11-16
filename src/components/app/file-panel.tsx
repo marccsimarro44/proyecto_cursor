@@ -198,7 +198,10 @@ export function FilePanel({ client, mode, onFinished }: FilePanelProps) {
           accept={ACCEPT}
           className="sr-only"
           id={`file-${mode}`}
-          aria-label="Elegir archivo"
+          // The visible button below opens this input; keeping both in the tab
+          // order would announce the same control twice.
+          tabIndex={-1}
+          aria-hidden="true"
           disabled={working}
           onChange={(event) => pick(event.target.files)}
         />

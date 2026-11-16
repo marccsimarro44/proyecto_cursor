@@ -21,6 +21,7 @@ import { buttonVariants } from "@/components/ui/button";
 import type { PiiEntityType } from "@/core-engine/types";
 import { entityStyle } from "@/lib/entity-style";
 import { FAQ } from "@/lib/faq";
+import { SHARE_IMAGE, SITE_NAME, SITE_URL } from "@/lib/site";
 
 const STEPS = [
   {
@@ -135,10 +136,13 @@ const structuredData = {
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      name: "PromptShield",
+      name: SITE_NAME,
+      url: `${SITE_URL}/`,
+      image: `${SITE_URL}${SHARE_IMAGE.url}`,
       applicationCategory: "SecurityApplication",
       operatingSystem: "Web",
       inLanguage: "es",
+      isAccessibleForFree: true,
       description:
         "Anonimiza DNI, NIE, CIF, IBAN, teléfonos y emails en textos y hojas de cálculo antes de enviarlos a ChatGPT o Claude, con restauración posterior. Funciona en el navegador.",
       offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
@@ -170,6 +174,10 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
+      <a href="#contenido" className="skip-link">
+        Saltar al contenido
+      </a>
+
       <header className="header-glass sticky top-0 z-20 border-b border-transparent">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-5">
           <a href="#" aria-label="PromptShield, inicio">
@@ -195,7 +203,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1">
+      <main id="contenido" tabIndex={-1} className="flex-1 outline-none">
         <section className="relative overflow-hidden">
           <div
             aria-hidden="true"

@@ -36,6 +36,10 @@ Browser-first tool that strips personal data (DNI, NIE, CIF, IBAN, phone numbers
 
 `npm run build` writes the site to `out/`. `public/_headers` is copied there and sets a Content-Security-Policy with `connect-src 'none'`, so the browser itself refuses any network request made by the page, which is what makes the "nothing leaves your browser" claim verifiable. Cloudflare Pages applies that file natively; on another host, replicate those headers. If you ever add analytics or any third-party script you must loosen that policy, and the privacy copy on the page has to change with it.
 
+**Public address.** Canonical links, the share image, `sitemap.xml` and `robots.txt` all read the site address from `src/lib/site.ts`. It defaults to the `pages.dev` address; when a custom domain replaces it, set `NEXT_PUBLIC_SITE_URL` in the Pages build settings (or change the default) and redeploy.
+
+**Share image.** `public/og.png` and `src/app/apple-icon.png` are rendered from `design/og.html` and `design/apple-icon.html` with the Edge or Chrome already on the machine: `npm run brand:render`. Change the HTML, run the script, commit the PNGs.
+
 ## Engine
 
 The UI talks to the engine only through `SanitizerClient` (`src/core-engine/workers/client.ts`), which runs everything in a Web Worker:

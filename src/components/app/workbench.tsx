@@ -31,9 +31,11 @@ import type {
 } from "@/core-engine/types";
 import { entityStyle } from "@/lib/entity-style";
 import { ENTITY_LABELS, countByType, sortedCounts } from "@/lib/format";
+import { remapDetections } from "@/lib/remap-detections";
 import { AnimatedNumber } from "./animated-number";
 import { CopyButton } from "./copy-button";
 import { FilePanel } from "./file-panel";
+import { HighlightedTextarea } from "./highlighted-textarea";
 import { TermsPanel } from "./terms-panel";
 import { TokenText } from "./token-text";
 import { useSanitizer } from "./use-sanitizer";
@@ -56,17 +58,25 @@ function Output({
   children,
   placeholder,
   busy,
+  label,
 }: {
   children: React.ReactNode;
   placeholder: string;
   busy: boolean;
+  /** Accessible name of the region. */
+  label: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-white/8 bg-black/25">
+    <div className="relative overflow-hidden rounded-xl border border-white/14 bg-black/25">
+      {/* Focusable so keyboard users can scroll a long result. It is not a
+          live region: re-reading a whole text on every keystroke would bury
+          the short status sentence below. */}
       <div
-        aria-live="polite"
+        role="region"
+        aria-label={label}
         aria-busy={busy}
-        className="min-h-52 w-full overflow-auto px-3 py-2.5 font-mono text-sm leading-7 break-words whitespace-pre-wrap md:max-h-96"
+        tabIndex={0}
+        className="focus-visible:ring-ring/60 min-h-52 w-full overflow-auto rounded-xl px-2.5 py-2.5 font-mono text-base leading-7 break-words whitespace-pre-wrap outline-none focus-visible:ring-2 md:max-h-96 md:text-sm"
       >
         {children ?? (
           <span className="text-muted-foreground/80 flex h-40 flex-col items-center justify-center gap-2 text-center font-sans whitespace-normal">
@@ -154,6 +164,8 @@ export function Workbench() {
   const [terms, setTerms] = useState("");
   const [response, setResponse] = useState("");
   const [latestProtected, setProtectedResult] = useState<SanitizeResult>();
+  /** The text `latestProtected` was computed from. */
+  const [protectedSource, setProtectedSource] = useState("");
   const [latestRestored, setRestored] = useState<RestoreResult>();
   const [elapsedMs, setElapsedMs] = useState<number>();
   const [protecting, setProtecting] = useState(false);
@@ -194,6 +206,7 @@ export function Workbench() {
         (result) => {
           if (current !== sequence.current) return;
           setProtectedResult(result);
+          setProtectedSource(source);
           setElapsedMs(performance.now() - startedAt);
           setFailure(undefined);
           setProtecting(false);
@@ -289,6 +302,12 @@ export function Workbench() {
   const restored = response.trim() === "" ? undefined : latestRestored;
   const counts = protectedResult ? countByType(protectedResult.detections) : {};
   const total = protectedResult?.detections.length ?? 0;
+  // The engine answers after a short delay; until it does, the highlights of
+  // the previous text are carried over to what is on screen now.
+  const sourceHighlights =
+    protectedResult && source.trim() !== ""
+      ? remapDetections(protectedSource, source, protectedResult.detections)
+      : [];
 
   return (
     <div
@@ -328,6 +347,9 @@ export function Workbench() {
 
           <TabsContent
             value="protect"
+            // Its first element is already focusable, so the panel itself
+            // would only be a redundant stop in the tab order.
+            tabIndex={-1}
             className="animate-in fade-in slide-in-from-bottom-1 mt-5 flex flex-col gap-5 duration-300"
           >
             <div className="grid gap-5 lg:grid-cols-2">
@@ -343,14 +365,13 @@ export function Workbench() {
                     )
                   }
                 />
-                <Textarea
+                <HighlightedTextarea
                   id="source"
-                  aria-label="Tu texto, con los datos reales"
+                  label="Tu texto, con los datos reales"
                   value={source}
-                  onChange={(event) => setSource(event.target.value)}
+                  onChange={setSource}
                   placeholder="Pega aquí el texto que vas a enviar a ChatGPT o Claude…"
-                  className="min-h-52 rounded-xl border-white/8 bg-black/25 py-2.5 font-mono leading-7 md:max-h-96 dark:bg-black/25"
-                  spellCheck={false}
+                  detections={sourceHighlights}
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -366,6 +387,7 @@ export function Workbench() {
                   }
                 />
                 <Output
+                  label="Texto protegido"
                   busy={protecting && source.trim() !== ""}
                   placeholder="Aquí aparecerá tu texto sin datos personales."
                 >
@@ -373,10 +395,20 @@ export function Workbench() {
                     <TokenText text={protectedResult.sanitizedText} />
                   )}
                 </Output>
-                <div
-                  className="flex min-h-6 flex-wrap items-center gap-1.5"
-                  aria-live="polite"
-                >
+                <p role="status" className="sr-only">
+                  {protectedResult &&
+                    (total === 0
+                      ? "No se detectó ningún dato."
+                      : `${total} ${total === 1 ? "dato protegido" : "datos protegidos"}: ${sortedCounts(
+                          counts,
+                        )
+                          .map(
+                            ([type, count]) =>
+                              `${count} ${ENTITY_LABELS[type]}`,
+                          )
+                          .join(", ")}.`)}
+                </p>
+                <div className="flex min-h-6 flex-wrap items-center gap-1.5">
                   {protectedResult &&
                     (total === 0 ? (
                       <Badge variant="secondary">
@@ -421,6 +453,7 @@ export function Workbench() {
 
           <TabsContent
             value="restore"
+            tabIndex={-1}
             className="animate-in fade-in slide-in-from-bottom-1 mt-5 flex flex-col gap-5 duration-300"
           >
             <p className="text-muted-foreground text-sm text-pretty">
@@ -438,7 +471,7 @@ export function Workbench() {
                   value={response}
                   onChange={(event) => setResponse(event.target.value)}
                   placeholder="Pega aquí la respuesta que contiene marcadores…"
-                  className="min-h-52 rounded-xl border-white/8 bg-black/25 py-2.5 font-mono leading-7 md:max-h-96 dark:bg-black/25"
+                  className="min-h-52 rounded-xl border-white/14 bg-black/25 py-2.5 font-mono leading-7 md:max-h-96 dark:bg-black/25"
                   spellCheck={false}
                 />
               </div>
@@ -455,6 +488,7 @@ export function Workbench() {
                   }
                 />
                 <Output
+                  label="Texto restaurado"
                   busy={restoring && response.trim() !== ""}
                   placeholder="Aquí aparecerá la respuesta con tus datos reales."
                 >
