@@ -17,6 +17,10 @@ export const PII_ENTITY_TYPES = [
   "CREDIT_CARD",
   /** A name or phrase the user asked to hide; it has no format to validate. */
   "TERM",
+  /** A person's name, recognized from context (see detectors/names.ts). */
+  "PERSON",
+  /** A company or organization, recognized by its legal form or a prefix. */
+  "ORG",
 ] as const;
 
 export type PiiEntityType = (typeof PII_ENTITY_TYPES)[number];

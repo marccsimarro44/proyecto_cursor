@@ -18,12 +18,12 @@ export const FAQ: readonly { question: string; answer: string }[] = [
   {
     question: "¿Detecta nombres y direcciones?",
     answer:
-      "No automáticamente. Un nombre no tiene formato que se pueda validar, y adivinarlos genera muchos errores. Lo que sí puedes hacer es escribir en el cuadro de nombres y empresas lo que quieras ocultar: se aplica a texto y archivos, sin distinguir mayúsculas. Las direcciones postales aún no se detectan.",
+      "Nombres y empresas, sí: un nombre no tiene checksum, así que se reconoce por el contexto (un nombre de pila con apellidos, un tratamiento como «Sra.» o «Dr.», un saludo o una firma) y las empresas por su forma jurídica (S.L., S.A.…) o su sector («Gestoría…»). Se puede desactivar, dejar visible un falso positivo con un clic y añadir a mano lo que se escape, como nombres poco comunes o escritos en minúscula. Las direcciones postales aún no se detectan solas: añádelas a tu lista.",
   },
   {
     question: "¿Qué datos detecta?",
     answer:
-      "DNI, NIE y CIF (comprobando su letra o dígito de control), IBAN españoles (verificación mod-97), móviles españoles con o sin prefijo +34, correos electrónicos y tarjetas de pago (algoritmo de Luhn). Al validar el checksum, un número que no cuadra no se marca, lo que reduce los falsos positivos.",
+      "DNI, NIE y CIF (comprobando su letra o dígito de control), IBAN españoles (verificación mod-97), móviles españoles con o sin prefijo +34, correos electrónicos y tarjetas de pago (algoritmo de Luhn). Al validar el checksum, un número que no cuadra no se marca, lo que reduce los falsos positivos. Además, nombres de persona y de empresa, reconocidos por el contexto.",
   },
   {
     question: "¿Basta con esto para cumplir el RGPD?",

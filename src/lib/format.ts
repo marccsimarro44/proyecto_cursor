@@ -10,6 +10,8 @@ export const ENTITY_LABELS: Record<PiiEntityType, string> = {
   EMAIL: "Email",
   CREDIT_CARD: "Tarjeta",
   TERM: "Término propio",
+  PERSON: "Nombre",
+  ORG: "Empresa",
 };
 
 /** `1536` -> `1,5 KB`. */

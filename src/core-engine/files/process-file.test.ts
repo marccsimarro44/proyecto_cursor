@@ -117,6 +117,55 @@ describe("processFile", () => {
     expect(result.detections).toEqual({ DNI: 1, PHONE: 1 });
   });
 
+  it("hides names in a workbook and restores it with its formulas", async () => {
+    sanitizer.setNameDetection(true);
+    const rows = [
+      ["Nombre", "Apellidos", "Empresa", "Importe", "Doble"],
+      ["Pilar", "García López", "Talleres Gil SL", 1200, 2400],
+    ];
+    const source = XLSX.utils.aoa_to_sheet(rows);
+    source.E2 = { t: "n", v: 2400, f: "D2*2" };
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, source, "Clientes");
+    const data: ArrayBuffer = XLSX.write(workbook, {
+      type: "array",
+      bookType: "xlsx",
+    });
+
+    const sanitized = await processFile(sanitizer, {
+      file: new Blob([data]),
+      fileName: "clientes.xlsx",
+      mode: "sanitize",
+    });
+    const hidden = XLSX.read(await sanitized.blob.arrayBuffer(), {
+      type: "array",
+    }).Sheets.Clientes;
+    expect(XLSX.utils.sheet_to_json(hidden, { header: 1 })[1]).toEqual([
+      "[PERSON_1]",
+      "[PERSON_2]",
+      "[ORG_1]",
+      1200,
+      2400,
+    ]);
+
+    const restored = await processFile(sanitizer, {
+      file: sanitized.blob,
+      fileName: sanitized.fileName,
+      mode: "restore",
+    });
+    const sheet = XLSX.read(await restored.blob.arrayBuffer(), {
+      type: "array",
+    }).Sheets.Clientes;
+    expect(XLSX.utils.sheet_to_json(sheet, { header: 1 })[1]).toEqual([
+      "Pilar",
+      "García López",
+      "Talleres Gil SL",
+      1200,
+      2400,
+    ]);
+    expect(sheet.E2.f).toBe("D2*2");
+  });
+
   it("reports progress from 0 to 1 and runs the hook between chunks", async () => {
     const progress: number[] = [];
     let hookCalls = 0;

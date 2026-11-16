@@ -94,6 +94,11 @@ export function createRequestHandler(dependencies: HandlerDependencies = {}) {
       return undefined;
     },
 
+    async setNameDetection({ enabled, ignored }) {
+      ready().sanitizer.setNameDetection(enabled, ignored);
+      return undefined;
+    },
+
     async listEntries() {
       return ready().vault.entries();
     },

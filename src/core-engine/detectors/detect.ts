@@ -9,6 +9,7 @@ import {
   findSpanishMobiles,
 } from "@/lib/regex-utils/es";
 import type { Detection, PiiEntityType } from "../types";
+import { findCompanyNames, findPersonNames } from "./names";
 import { findTerms } from "./terms";
 
 interface Detector {
@@ -35,6 +36,44 @@ const DETECTORS: readonly Detector[] = [
 export interface DetectOptions {
   /** Extra names or phrases to detect, matched as whole words. */
   terms?: readonly string[];
+  /** Also look for names of people and companies (see names.ts). */
+  names?: boolean;
+  /**
+   * Values the user marked as not personal, e.g. a product called "Victoria
+   * Bitter". A name found with one of these values is dropped, together
+   * with any shorter name inside it.
+   */
+  ignored?: readonly string[];
+}
+
+/** Case and spacing do not matter when comparing with `ignored`. */
+export function ignoreKey(value: string): string {
+  return value.replace(/\s+/g, " ").trim().toLocaleLowerCase("es");
+}
+
+function findNames(
+  text: string,
+  ignored: readonly string[],
+): { type: PiiEntityType; match: PatternMatch }[] {
+  const found = [
+    ...findCompanyNames(text).map((match) => ({ type: "ORG" as const, match })),
+    ...findPersonNames(text).map((match) => ({
+      type: "PERSON" as const,
+      match,
+    })),
+  ];
+  if (ignored.length === 0) return found;
+
+  const keys = new Set(ignored.map(ignoreKey));
+  const dropped = found
+    .filter(({ match }) => keys.has(ignoreKey(match.value)))
+    .map(({ match }) => match);
+  return found.filter(
+    ({ match }) =>
+      !dropped.some(
+        (outer) => match.start >= outer.start && match.end <= outer.end,
+      ),
+  );
 }
 
 interface Candidate extends Detection {
@@ -74,6 +113,17 @@ export function detectPii(
   const rank = DETECTORS.length;
   for (const match of findTerms(text, options.terms ?? [])) {
     candidates.push({ type: "TERM", ...match, rank });
+  }
+  // Guessed names rank after the user's own terms, companies before people
+  // so "Talleres José Pérez" is not split into a person and a leftover.
+  if (options.names) {
+    for (const { type, match } of findNames(text, options.ignored ?? [])) {
+      candidates.push({
+        type,
+        ...match,
+        rank: rank + (type === "ORG" ? 1 : 2),
+      });
+    }
   }
 
   candidates.sort(

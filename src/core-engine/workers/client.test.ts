@@ -180,6 +180,21 @@ describe("SanitizerClient", () => {
     expect(await client.vaultSize()).toBe(1);
   });
 
+  it("keeps name detection and its ignored names across a restart", async () => {
+    const { client } = await createClient();
+    await client.setNameDetection(true, ["Marta"]);
+    const text = "Marta y Luis Ortega";
+    expect((await client.sanitizeText(text)).sanitizedText).toBe(
+      "Marta y [PERSON_1]",
+    );
+
+    await client.restart();
+
+    expect((await client.sanitizeText(text)).sanitizedText).toBe(
+      "Marta y [PERSON_1]",
+    );
+  });
+
   it("loses the vault on restart when only memory storage is available", async () => {
     const { client } = await createClient({
       openStorage: async () => ({

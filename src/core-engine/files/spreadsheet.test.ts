@@ -37,6 +37,39 @@ function workbookOf(rows: unknown[][], sheetName = "Clientes"): XLSX.WorkBook {
 }
 
 describe("transformSpreadsheet", () => {
+  it("transforms the text cells of a row together, keeping the cells apart", async () => {
+    const seen: string[] = [];
+    const output = await readBack(
+      await transformSpreadsheet(
+        toBlob(workbookOf([["Pilar", 7, "García López"]])),
+        (text) => {
+          seen.push(text);
+          return text.toUpperCase();
+        },
+        { mode: "sanitize" },
+      ),
+    );
+
+    expect(seen[0]).toBe("Pilar\tGarcía López");
+    expect(
+      XLSX.utils.sheet_to_json(output.Sheets.Clientes, { header: 1 }),
+    ).toEqual([["PILAR", 7, "GARCÍA LÓPEZ"]]);
+  });
+
+  it("falls back to one cell at a time when a value spans two cells", async () => {
+    const output = await readBack(
+      await transformSpreadsheet(
+        toBlob(workbookOf([["Ana", "García", "x"]])),
+        (text) => text.replace(/Ana\s+García/, "[TERM_1]"),
+        { mode: "sanitize" },
+      ),
+    );
+
+    expect(
+      XLSX.utils.sheet_to_json(output.Sheets.Clientes, { header: 1 }),
+    ).toEqual([["Ana", "García", "x"]]);
+  });
+
   it("sanitizes text cells and leaves the rest as it was", async () => {
     const source = workbookOf([
       ["Nombre", "DNI", "Email", "Importe", "Alta"],

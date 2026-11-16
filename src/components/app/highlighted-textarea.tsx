@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, EyeIcon } from "lucide-react";
 import { cn } from "cn";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,16 @@ interface HighlightedTextareaProps {
   placeholder: string;
   /** Ranges to highlight, valid for `value`: ordered and not overlapping. */
   detections: readonly Detection[];
+  /** Leaves a guessed name visible; offered for people and companies. */
+  onIgnore?: (value: string) => void;
 }
+
+function shorten(value: string): string {
+  return value.length > 24 ? `${value.slice(0, 22)}…` : value;
+}
+
+/** Types found by guessing, which the user may overrule. */
+const GUESSED: ReadonlySet<Detection["type"]> = new Set(["PERSON", "ORG"]);
 
 /**
  * A textarea that paints what the engine found behind the text you typed.
@@ -46,9 +55,11 @@ export function HighlightedTextarea({
   onChange,
   placeholder,
   detections,
+  onIgnore,
 }: HighlightedTextareaProps) {
   const field = useRef<HTMLTextAreaElement>(null);
   const layer = useRef<HTMLDivElement>(null);
+  const nextButton = useRef<HTMLButtonElement>(null);
   const [cursor, setCursor] = useState(-1);
 
   const highlighting =
@@ -115,6 +126,15 @@ export function HighlightedTextarea({
 
   const current = active === -1 ? undefined : marks[active];
 
+  function ignoreCurrent() {
+    if (!current || !onIgnore) return;
+    onIgnore(current.value);
+    // The next press of "siguiente" lands on what followed the ignored one,
+    // and the focus moves there because this button is about to go away.
+    setCursor(active - 1);
+    nextButton.current?.focus();
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <div className="relative rounded-xl bg-black/25 ring-1 ring-white/14">
@@ -145,7 +165,7 @@ export function HighlightedTextarea({
       </div>
 
       {marks.length > 0 && (
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
           <div className="flex gap-1">
             <Button
               variant="outline"
@@ -156,6 +176,7 @@ export function HighlightedTextarea({
               <ChevronUpIcon />
             </Button>
             <Button
+              ref={nextButton}
               variant="outline"
               size="icon-sm"
               aria-label="Dato siguiente"
@@ -164,11 +185,24 @@ export function HighlightedTextarea({
               <ChevronDownIcon />
             </Button>
           </div>
-          <span role="status" className="text-muted-foreground tabular-nums">
+          <span
+            role="status"
+            className="text-muted-foreground min-w-0 truncate tabular-nums"
+          >
             {current
               ? `${active + 1} de ${marks.length}: ${ENTITY_LABELS[current.type]}`
               : `${marks.length} ${marks.length === 1 ? "dato resaltado" : "datos resaltados"}. Recórrelos con los botones.`}
           </span>
+          {current && onIgnore && GUESSED.has(current.type) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-7 text-xs"
+              onClick={ignoreCurrent}
+            >
+              <EyeIcon /> No ocultar «{shorten(current.value)}»
+            </Button>
+          )}
         </div>
       )}
       {!highlighting && detections.length > 0 && (

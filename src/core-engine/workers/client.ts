@@ -74,6 +74,7 @@ export class SanitizerClient {
   private disposed = false;
   private storageBackend: VaultStorageBackend = "memory";
   private terms: string[] = [];
+  private nameDetection = { enabled: false, ignored: [] as string[] };
   private readonly pending = new Map<number, PendingCall>();
 
   private constructor(
@@ -144,6 +145,15 @@ export class SanitizerClient {
     await this.call("setTerms", { terms });
   }
 
+  /**
+   * Turns the guessing of people's and companies' names on or off, and
+   * sets the names not to hide. Kept like the terms across a restart.
+   */
+  async setNameDetection(enabled: boolean, ignored: string[]): Promise<void> {
+    this.nameDetection = { enabled, ignored };
+    await this.call("setNameDetection", this.nameDetection);
+  }
+
   /** Number of distinct values the vault holds. */
   vaultSize(): Promise<number> {
     return this.call("vaultSize", undefined);
@@ -181,9 +191,11 @@ export class SanitizerClient {
   private async initialize(): Promise<InitResult> {
     const result = await this.call("init", this.session);
     this.storageBackend = result.backend;
-    // A restarted worker starts without the user's terms.
+    // A restarted worker starts without the user's settings.
     if (this.terms.length > 0)
       await this.call("setTerms", { terms: this.terms });
+    if (this.nameDetection.enabled)
+      await this.call("setNameDetection", this.nameDetection);
     return result;
   }
 

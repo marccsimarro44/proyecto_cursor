@@ -51,7 +51,11 @@ const { restoredText } = await client.restoreText("Sobre [DNI_1]..."); // origin
 const result = await client.processFile(file, "sanitize", onProgress); // .csv, .xlsx, ...
 ```
 
-Detected today: DNI, NIE and CIF (control character verified), Spanish IBAN (mod-97), Spanish mobile numbers, email addresses and payment cards (Luhn). Names and postal addresses are not detected automatically: the user lists names and companies as "terms" (`client.setTerms`), which are matched as whole words, ignoring case.
+Detected today: DNI, NIE and CIF (control character verified), Spanish IBAN (mod-97), Spanish mobile numbers, email addresses and payment cards (Luhn).
+
+Names of people (`PERSON`) and companies (`ORG`) are recognized from context when `client.setNameDetection(true, ignored)` is on, as the UI does by default. People are recognized by a known first name followed by surnames, by a title ("Sra.", "Dr.") or a greeting before a name, or by a surname field next to a first name in a table row. Companies are recognized by a legal form ("S.L.", "S.A.U.", "GmbH") or a sector word ("Gestoría", "Fundación"). The rules live in `src/core-engine/detectors/names.ts` and favor precision. `ignored` lists values the user marked as not personal.
+
+Anything else, such as postal addresses or unusual names, can be added as "terms" (`client.setTerms`). Terms are matched as whole words, ignoring case, and take precedence over a guessed name for the same text.
 
 The vault is volatile by design. Its AES-GCM key is non-extractable and lives only in the page's memory; IndexedDB only ever holds ciphertext. Reloading or closing the tab discards the key, so tokens issued before can no longer be restored, and the leftover ciphertext is deleted the next time the app opens.
 

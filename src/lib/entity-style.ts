@@ -14,6 +14,8 @@ export const ENTITY_HUE: Record<PiiEntityType, number> = {
   EMAIL: 205,
   CREDIT_CARD: 22,
   TERM: 78,
+  PERSON: 50,
+  ORG: 110,
 };
 
 /** Inline style that feeds the `.tok` and `.tok-dot` classes. */

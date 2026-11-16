@@ -18,6 +18,9 @@ const TOKEN_PATTERN = new RegExp(
   "gi",
 );
 
+/** Punctuation inside names: "Pérez & Asociados, S.L.", "O'Donnell". */
+const NAME_CHARACTERS = ",&'’·ª";
+
 /**
  * Replaces personal data with vault tokens and back.
  *
@@ -27,6 +30,8 @@ const TOKEN_PATTERN = new RegExp(
  */
 export class Sanitizer {
   private terms: readonly string[] = [];
+  private names = false;
+  private ignored: readonly string[] = [];
 
   constructor(private readonly vault: Vault) {}
 
@@ -38,14 +43,31 @@ export class Sanitizer {
     this.terms = normalizeTerms(terms);
   }
 
-  /** Every distinct character used by the current terms. */
+  /**
+   * Turns the guessing of people's and companies' names on or off.
+   * `ignored` lists names the user marked as not personal.
+   */
+  setNameDetection(enabled: boolean, ignored: readonly string[] = []): void {
+    this.names = enabled;
+    this.ignored = ignored;
+  }
+
+  /**
+   * Every distinct character a value can contain beyond letters, digits
+   * and the separators of the built-in formats.
+   */
   get termCharacters(): string {
-    return [...new Set(this.terms.join(""))].join("");
+    const extra = this.names ? NAME_CHARACTERS : "";
+    return [...new Set(this.terms.join("") + extra)].join("");
   }
 
   /** Replaces every piece of personal data in `text` with its token. */
   sanitize(text: string): SanitizeResult {
-    const detections = detectPii(text, { terms: this.terms });
+    const detections = detectPii(text, {
+      terms: this.terms,
+      names: this.names,
+      ignored: this.ignored,
+    });
     const entries = new Map<VaultToken, VaultEntry>();
 
     let sanitizedText = "";

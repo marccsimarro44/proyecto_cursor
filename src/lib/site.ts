@@ -16,12 +16,12 @@ export const SITE_TITLE =
   "PromptShield: anonimiza DNI e IBAN antes de usar ChatGPT";
 
 export const SITE_DESCRIPTION =
-  "Sustituye DNI, NIE, CIF, IBAN, teléfonos y emails por marcadores antes de enviar textos, CSV o Excel a ChatGPT o Claude, y restáuralos después. Todo en tu navegador, sin servidores.";
+  "Sustituye nombres, empresas, DNI, NIE, CIF, IBAN, teléfonos y emails por marcadores antes de enviar textos, CSV o Excel a ChatGPT o Claude, y restáuralos después. Todo en tu navegador, sin servidores.";
 
 export const SHARE_TITLE = "Usa ChatGPT con tus datos reales sin entregárselos";
 
 export const SHARE_DESCRIPTION =
-  "Anonimiza DNI, IBAN, teléfonos y emails en textos y Excel antes de enviarlos a la IA. Todo ocurre en tu navegador: tus datos no salen de tu equipo.";
+  "Anonimiza nombres, DNI, IBAN, teléfonos y emails en textos y Excel antes de enviarlos a la IA. Todo ocurre en tu navegador: tus datos no salen de tu equipo.";
 
 export const SHARE_IMAGE = {
   url: "/og.png",

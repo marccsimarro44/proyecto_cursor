@@ -16,20 +16,54 @@ const XLSX_MIME_TYPE =
 const READ_SHARE = 0.3;
 const WRITE_SHARE = 0.2;
 
+/** Joins the text cells of a row, like the columns of a TSV line. */
+const CELL_SEPARATOR = "\t";
+
+type TextCell = CellObject & { t: "s"; v: string };
+
+function isTextCell(cell: CellObject | undefined): cell is TextCell {
+  return cell?.t === "s" && typeof cell.v === "string";
+}
+
+function setText(cell: TextCell, value: string): void {
+  if (value === cell.v) return;
+  cell.v = value;
+  // Cached renderings of the old value: formatted, rich text and HTML.
+  delete cell.w;
+  delete cell.r;
+  delete cell.h;
+}
+
+/**
+ * Transforms the text cells of a row in one go, so the detectors see them in
+ * context: "Pilar" next to "García López" is a first name and its surnames.
+ * Falls back to one cell at a time when a cell holds a tab or a replacement
+ * would span two cells.
+ */
+function transformRowTexts(
+  row: readonly (CellObject | undefined)[],
+  transform: (text: string) => string,
+): void {
+  const cells = row.filter(isTextCell);
+  const values = cells.map((cell) => cell.v);
+  let results: string[] | undefined;
+  if (
+    cells.length > 1 &&
+    !values.some((value) => value.includes(CELL_SEPARATOR))
+  ) {
+    const parts = transform(values.join(CELL_SEPARATOR)).split(CELL_SEPARATOR);
+    if (parts.length === cells.length) results = parts;
+  }
+  results ??= values.map(transform);
+  cells.forEach((cell, index) => setText(cell, results[index]));
+}
+
+/** Everything but the cell's text value, which goes by row. */
 function transformCell(
   cell: CellObject,
   transform: (text: string) => string,
 ): void {
-  if (cell.t === "s" && typeof cell.v === "string") {
-    const value = transform(cell.v);
-    if (value !== cell.v) {
-      cell.v = value;
-      // Cached renderings of the old value: formatted, rich text and HTML.
-      delete cell.w;
-      delete cell.r;
-      delete cell.h;
-    }
-  } else if (cell.t === "n") {
+  if (cell.t === "n") {
     // Phone numbers are often stored as numbers. Check the cell as the user
     // sees it; if it holds a value to replace, the cell becomes text.
     const shown = cell.w ?? String(cell.v);
@@ -92,6 +126,7 @@ export async function transformSpreadsheet(
     const rows = workbook.Sheets[workbook.SheetNames[index]]["!data"] ?? [];
     for (const row of rows) {
       if (row === undefined) continue;
+      transformRowTexts(row, transform);
       for (const cell of row) {
         if (cell !== undefined) transformCell(cell, transform);
       }

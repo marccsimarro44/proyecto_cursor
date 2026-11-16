@@ -83,6 +83,51 @@ describe("detectPii", () => {
     ]);
   });
 
+  it("finds people and companies only when asked to", () => {
+    const text = "Ana García Ruiz trabaja en Construcciones Levante, S.L.";
+    expect(detectPii(text)).toEqual([]);
+    expect(
+      detectPii(text, { names: true }).map((d) => [d.type, d.value]),
+    ).toEqual([
+      ["PERSON", "Ana García Ruiz"],
+      ["ORG", "Construcciones Levante, S.L."],
+    ]);
+  });
+
+  it("keeps a company whole when it contains a person's name", () => {
+    expect(
+      detectPii("Factura de Talleres José Pérez SL.", { names: true }).map(
+        (d) => [d.type, d.value],
+      ),
+    ).toEqual([["ORG", "Talleres José Pérez SL"]]);
+  });
+
+  it("prefers the user's term over a guessed name of the same span", () => {
+    expect(
+      detectPii("Hola Ana García", { names: true, terms: ["Ana García"] }).map(
+        (d) => d.type,
+      ),
+    ).toEqual(["TERM"]);
+  });
+
+  it("drops ignored names and the shorter names inside them", () => {
+    const text = "Pide Construcciones Levante SL y llama a Marta López.";
+    expect(
+      detectPii(text, {
+        names: true,
+        ignored: ["construcciones  LEVANTE sl"],
+      }).map((d) => d.value),
+    ).toEqual(["Marta López"]);
+  });
+
+  it("never ignores data with a format of its own", () => {
+    expect(
+      detectPii("DNI 12345678Z", { names: true, ignored: ["12345678Z"] }).map(
+        (d) => d.type,
+      ),
+    ).toEqual(["DNI"]);
+  });
+
   it("returns nothing for text without personal data", () => {
     expect(detectPii("Reunión el 12/03/2025 a las 10:30, sala 4.")).toEqual([]);
     expect(detectPii("")).toEqual([]);

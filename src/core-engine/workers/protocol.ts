@@ -32,6 +32,11 @@ export interface SanitizerApi {
   };
   /** Replaces the user's list of names and phrases to hide. */
   setTerms: { params: { terms: string[] }; result: undefined };
+  /** Turns name guessing on or off; `ignored` are values not to hide. */
+  setNameDetection: {
+    params: { enabled: boolean; ignored: string[] };
+    result: undefined;
+  };
   listEntries: { params: undefined; result: VaultEntry[] };
   /** Number of distinct values in the vault, without copying them. */
   vaultSize: { params: undefined; result: number };

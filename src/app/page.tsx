@@ -1,6 +1,7 @@
 import {
   ArrowRightIcon,
   BanIcon,
+  BriefcaseBusinessIcon,
   BuildingIcon,
   CreditCardIcon,
   FileLockIcon,
@@ -10,11 +11,13 @@ import {
   MailIcon,
   ShieldCheckIcon,
   SmartphoneIcon,
+  UserRoundIcon,
   WifiOffIcon,
 } from "lucide-react";
 import { Workbench } from "@/components/app/workbench";
 import { Logo } from "@/components/brand/logo";
 import { HeroDemo } from "@/components/site/hero-demo";
+import { MobileNav } from "@/components/site/mobile-nav";
 import { NetworkProbe } from "@/components/site/network-probe";
 import { SpotlightCard } from "@/components/site/spotlight-card";
 import { buttonVariants } from "@/components/ui/button";
@@ -94,6 +97,22 @@ const DETECTED: {
     type: "CREDIT_CARD",
     icon: CreditCardIcon,
   },
+  {
+    name: "Nombres de persona",
+    detail: "Por contexto: nombre, apellidos, «Sra.»",
+    example: "Ana García Ruiz",
+    token: "[PERSON_1]",
+    type: "PERSON",
+    icon: UserRoundIcon,
+  },
+  {
+    name: "Empresas",
+    detail: "Forma jurídica o sector",
+    example: "Levante S.L.",
+    token: "[ORG_1]",
+    type: "ORG",
+    icon: BriefcaseBusinessIcon,
+  },
 ];
 
 const PRIVACY = [
@@ -121,7 +140,7 @@ const PROOF = [
     value: "AES-256",
     label: "cifrado de la bóveda, con clave solo en memoria",
   },
-  { value: "7", label: "tipos de dato detectados, más tu lista de nombres" },
+  { value: "9", label: "tipos de dato, nombres y empresas incluidos" },
 ];
 
 const NAV = [
@@ -144,7 +163,7 @@ const structuredData = {
       inLanguage: "es",
       isAccessibleForFree: true,
       description:
-        "Anonimiza DNI, NIE, CIF, IBAN, teléfonos y emails en textos y hojas de cálculo antes de enviarlos a ChatGPT o Claude, con restauración posterior. Funciona en el navegador.",
+        "Anonimiza nombres, empresas, DNI, NIE, CIF, IBAN, teléfonos y emails en textos y hojas de cálculo antes de enviarlos a ChatGPT o Claude, con restauración posterior. Funciona en el navegador.",
       offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
     },
     {
@@ -194,12 +213,15 @@ export default function Home() {
               </a>
             ))}
           </nav>
-          <a
-            href="#herramienta"
-            className={buttonVariants({ size: "default" })}
-          >
-            Probar ahora
-          </a>
+          <div className="flex items-center gap-1">
+            <MobileNav items={NAV} />
+            <a
+              href="#herramienta"
+              className={buttonVariants({ size: "default" })}
+            >
+              Probar ahora
+            </a>
+          </div>
         </div>
       </header>
 
@@ -231,10 +253,10 @@ export default function Home() {
                 <span className="text-gradient-brand">sin entregárselos</span>
               </h1>
               <p className="text-muted-foreground max-w-2xl text-lg text-pretty sm:text-xl">
-                PromptShield cambia DNI, NIE, CIF, IBAN, teléfonos y emails por
-                marcadores antes de que el texto salga de tu equipo, y los
-                restaura cuando la IA responde. Hecho para formatos españoles,
-                con Excel y CSV incluidos.
+                PromptShield cambia nombres, empresas, DNI, IBAN, teléfonos y
+                emails por marcadores antes de que el texto salga de tu equipo,
+                y los restaura cuando la IA responde. Hecho para formatos
+                españoles, con Excel y CSV incluidos.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <a
@@ -322,11 +344,12 @@ export default function Home() {
                 Si el número no cuadra, no se marca
               </h2>
               <p className="text-muted-foreground mt-3 max-w-2xl text-pretty">
-                Cada dato se valida con su propio checksum. Menos falsos
-                positivos y menos texto estropeado.
+                Cada número se valida con su propio checksum, y cada nombre por
+                el contexto en que aparece. Menos falsos positivos y menos texto
+                estropeado.
               </p>
             </div>
-            <ul className="reveal mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="reveal mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {DETECTED.map((item) => (
                 <li key={item.name}>
                   <SpotlightCard className="h-full p-5">
@@ -371,11 +394,11 @@ export default function Home() {
                 aria-hidden="true"
               />
               <p className="text-sm text-pretty">
-                <strong>Nombres y direcciones no se detectan solos.</strong> No
-                tienen formato que validar y adivinarlos falla mucho. Escribe
-                los nombres y empresas a ocultar en la herramienta y se protegen
-                igual que el resto. Los teléfonos fijos y los IBAN extranjeros
-                tampoco están cubiertos todavía.
+                <strong>Revisa siempre el resaltado.</strong> Los nombres poco
+                comunes o escritos en minúscula pueden escaparse, y las
+                direcciones no se detectan solas: añádelos a tu lista en la
+                herramienta y se protegen igual que el resto. Los teléfonos
+                fijos y los IBAN extranjeros tampoco están cubiertos todavía.
               </p>
             </div>
           </div>

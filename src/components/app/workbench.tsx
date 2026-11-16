@@ -47,7 +47,6 @@ const EXAMPLE_TEXT =
   "Hola, soy Ana García Ruiz (DNI 12345678Z) y te escribo por la factura de Construcciones Levante S.L. (CIF B12345674). " +
   "Pagadla a la cuenta ES91 2100 0418 4502 0005 1332. " +
   "Si hay dudas, escríbeme a ana.garcia@example.com o llámame al +34 612 345 678.";
-const EXAMPLE_TERMS = "Ana García Ruiz\nConstrucciones Levante S.L.";
 
 function termList(raw: string): string[] {
   return raw.split("\n").map((line) => line.trim());
@@ -162,6 +161,8 @@ export function Workbench() {
   const [tab, setTab] = useState<string>("protect");
   const [source, setSource] = useState("");
   const [terms, setTerms] = useState("");
+  const [autoNames, setAutoNames] = useState(true);
+  const [ignored, setIgnored] = useState<string[]>([]);
   const [response, setResponse] = useState("");
   const [latestProtected, setProtectedResult] = useState<SanitizeResult>();
   /** The text `latestProtected` was computed from. */
@@ -193,6 +194,23 @@ export function Workbench() {
     }, TERMS_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [client, terms]);
+
+  useEffect(() => {
+    if (!client) return;
+    client.setNameDetection(autoNames, ignored).then(
+      () => setVersion((current) => current + 1),
+      () => undefined,
+    );
+  }, [client, autoNames, ignored]);
+
+  function ignoreName(value: string) {
+    setIgnored((current) =>
+      current.some((name) => name.toLowerCase() === value.toLowerCase())
+        ? current
+        : [...current, value],
+    );
+    toast(`«${value}» se deja visible. Puedes volver a ocultarlo abajo.`);
+  }
 
   // Live protection of the text on the left.
   useEffect(() => {
@@ -270,7 +288,7 @@ export function Workbench() {
 
   function loadExample() {
     setTab("protect");
-    setTerms(EXAMPLE_TERMS);
+    setAutoNames(true);
     setSource(EXAMPLE_TEXT);
   }
 
@@ -372,6 +390,7 @@ export function Workbench() {
                   onChange={setSource}
                   placeholder="Pega aquí el texto que vas a enviar a ChatGPT o Claude…"
                   detections={sourceHighlights}
+                  onIgnore={ignoreName}
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -412,7 +431,8 @@ export function Workbench() {
                   {protectedResult &&
                     (total === 0 ? (
                       <Badge variant="secondary">
-                        No se detectó ningún dato. Revisa los nombres abajo.
+                        No se detectó ningún dato. Si falta alguno, añádelo
+                        abajo.
                       </Badge>
                     ) : (
                       <>
@@ -434,7 +454,18 @@ export function Workbench() {
               </div>
             </div>
 
-            <TermsPanel value={terms} onChange={setTerms} />
+            <TermsPanel
+              value={terms}
+              onChange={setTerms}
+              autoNames={autoNames}
+              onAutoNamesChange={setAutoNames}
+              ignored={ignored}
+              onUnignore={(value) =>
+                setIgnored((current) =>
+                  current.filter((name) => name !== value),
+                )
+              }
+            />
 
             {failure && (
               <p role="alert" className="text-destructive text-sm">

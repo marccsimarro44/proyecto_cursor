@@ -258,6 +258,23 @@ describe("request handler", () => {
     ).toBe(2);
   });
 
+  it("hides names after setNameDetection, except the ignored ones", async () => {
+    const { handler } = await initialized();
+    await call(handler, {
+      method: "setNameDetection",
+      params: { enabled: true, ignored: ["Gestoría Ruiz"] },
+    });
+
+    const sanitized = await call(handler, {
+      method: "sanitizeText",
+      params: { text: "Marta López, de Gestoría Ruiz" },
+    });
+
+    expect(sanitized).toMatchObject({
+      sanitizedText: "[PERSON_1], de Gestoría Ruiz",
+    });
+  });
+
   it("lists the entries and clears them", async () => {
     const { handler } = await initialized();
     await call(handler, {

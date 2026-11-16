@@ -23,11 +23,11 @@ type Piece = { text: string } | { sensitive: Sensitive; order: number };
 
 const PARTS: Part[] = [
   "Hola, soy ",
-  { text: "Ana García Ruiz", token: "[TERM_1]", type: "TERM" },
+  { text: "Ana García Ruiz", token: "[PERSON_1]", type: "PERSON" },
   " (DNI ",
   { text: "12345678Z", token: "[DNI_1]", type: "DNI" },
   ") y te escribo por la factura de ",
-  { text: "Construcciones Levante S.L.", token: "[TERM_2]", type: "TERM" },
+  { text: "Construcciones Levante S.L.", token: "[ORG_1]", type: "ORG" },
   ". Pagadla a ",
   { text: "ES91 2100 0418 4502 0005 1332", token: "[IBAN_1]", type: "IBAN" },
   " o escríbeme a ",
